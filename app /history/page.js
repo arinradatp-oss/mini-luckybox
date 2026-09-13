@@ -1,14 +1,71 @@
-ช่วยเขียนไฟล์ app/history/page.js สำหรับ Next.js App Router (JavaScript)
-เป็นหน้าประวัติการสุ่มของระบบ Mini Lucky Box
+"use client";
 
-ต้องการฟีเจอร์:
-1. ดึงข้อมูลจากตาราง draw_orders ทั้งหมด เรียงจากล่าสุดไปเก่าสุด (order by drawn_at desc)
-2. สำหรับแต่ละออเดอร์ ให้ดึงรายการไอเทมที่สุ่มได้จากตาราง draw_order_items
-   ที่มี order_id ตรงกัน มาแสดงเป็นรายการย่อยใต้ออเดอร์นั้น (กดเพื่อขยายดูก็ได้)
-3. แสดงต่อออเดอร์: วันเวลาที่สุ่ม, ชื่อลูกค้า, ไซส์กล่อง, หมวดที่เลือก, ราคารวม,
-   และรายชื่อไอเทมทั้งหมดที่ได้
-4. แสดงยอดขายรวมทั้งหมด (sum ของ total_price ทุกออเดอร์) ไว้ด้านบนสุด
-5. ใช้ Supabase client จาก lib/supabaseClient.js
-6. เป็น Client Component ("use client" บรรทัดแรก)
+import { useState, useEffect } from 'react';
+import { supabase } from '../../lib/supabaseClient';
 
-ขอโค้ดแบบเต็มไฟล์ พร้อม comment สั้นๆ อธิบายส่วนสำคัญ
+export default function HistoryPage() {
+  const [orders, setOrders] = useState([]);
+  const [itemsByOrder, setItemsByOrder] = useState({});
+  const [expanded, setExpanded] = useState({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function load() {
+      setLoading(true);
+      const { data: orderData } = await supabase
+        .from('draw_orders')
+        .select('*')
+        .order('drawn_at', { ascending: false });
+
+      setOrders(orderData || []);
+
+      const { data: itemData } = await supabase
+        .from('draw_order_items')
+        .select('*');
+
+      const grouped = {};
+      (itemData || []).forEach(item => {
+        if (!grouped[item.order_id]) grouped[item.order_id] = [];
+        grouped[item.order_id].push(item);
+      });
+      setItemsByOrder(grouped);
+      setLoading(false);
+    }
+    load();
+  }, []);
+
+  function toggleExpand(id) {
+    setExpanded(prev => ({ ...prev, [id]: !prev[id] }));
+  }
+
+  const totalRevenue = orders.reduce((sum, o) => sum + Number(o.total_price), 0);
+
+  if (loading) return <p>กำลังโหลด...</p>;
+
+  return (
+    <div>
+      <h1>ประวัติการสุ่ม</h1>
+      <h2>ยอดขายรวม: {totalRevenue.toLocaleString()} บาท</h2>
+
+      {orders.map(order => (
+        <div key={order.id} style={{ border: '1px solid #ddd', padding: '12px', marginBottom: '8px' }}>
+          <div onClick={() => toggleExpand(order.id)} style={{ cursor: 'pointer' }}>
+            <strong>{new Date(order.drawn_at).toLocaleString('th-TH')}</strong> —
+            {' '}{order.customer_name} —
+            {' '}กล่อง {order.box_size} —
+            {' '}หมวด: {order.categories_selected} —
+            {' '}{order.total_price} บาท
+            {' '}({expanded[order.id] ? 'ซ่อน' : 'ดูรายการ'})
+          </div>
+          {expanded[order.id] && (
+            <ul>
+              {(itemsByOrder[order.id] || []).map(item => (
+                <li key={item.id}>{item.product_name} ({item.category})</li>
+              ))}
+            </ul>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
