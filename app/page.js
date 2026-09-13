@@ -5,6 +5,42 @@ import { supabase } from '../lib/supabaseClient';
 
 const CATEGORIES = ['rope', 'bead', 'silver', 'gold'];
 
+const inputStyle = {
+  padding: '8px 12px',
+  border: '1px solid #e5e7eb',
+  borderRadius: '6px',
+  fontSize: '0.9375rem',
+  outline: 'none',
+};
+
+const cardStyle = {
+  background: '#ffffff',
+  borderRadius: '8px',
+  padding: '20px',
+  boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+  marginBottom: '24px',
+};
+
+const secondaryButtonStyle = {
+  background: '#f3f4f6',
+  color: '#374151',
+};
+
+const dangerButtonStyle = {
+  background: '#fef2f2',
+  color: '#dc2626',
+  padding: '6px 12px',
+  fontSize: '0.8125rem',
+};
+
+const editButtonStyle = {
+  background: '#eff6ff',
+  color: '#2563eb',
+  padding: '6px 12px',
+  fontSize: '0.8125rem',
+  marginRight: '6px',
+};
+
 export default function ProductsPage() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -74,21 +110,28 @@ export default function ProductsPage() {
       <h1>คลังสินค้า</h1>
 
       {/* ฟอร์มเพิ่ม/แก้ไขสินค้า */}
-      <form onSubmit={handleSubmit} style={{ marginBottom: '24px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-        <input placeholder="SKU" value={form.sku} onChange={e => setForm({ ...form, sku: e.target.value })} required />
-        <input placeholder="ชื่อสินค้า" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required />
-        <select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })}>
-          {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-        </select>
-        <input type="number" step="0.1" placeholder="ตัวคูณราคา" value={form.price_multiplier} onChange={e => setForm({ ...form, price_multiplier: e.target.value })} />
-        <input type="number" placeholder="น้ำหนักสุ่ม" value={form.draw_weight} onChange={e => setForm({ ...form, draw_weight: e.target.value })} />
-        <input type="number" placeholder="คงเหลือ" value={form.stock} onChange={e => setForm({ ...form, stock: e.target.value })} />
-        <input placeholder="หน่วย" value={form.unit} onChange={e => setForm({ ...form, unit: e.target.value })} />
-        <button type="submit">{editingId ? 'บันทึกการแก้ไข' : 'เพิ่มสินค้า'}</button>
-        {editingId && <button type="button" onClick={resetForm}>ยกเลิก</button>}
-      </form>
+      <div style={cardStyle}>
+        <h3 style={{ marginBottom: '16px' }}>
+          {editingId ? 'แก้ไขสินค้า' : 'เพิ่มสินค้าใหม่'}
+        </h3>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+          <input style={{ ...inputStyle, width: '110px' }} placeholder="SKU" value={form.sku} onChange={e => setForm({ ...form, sku: e.target.value })} required />
+          <input style={{ ...inputStyle, width: '160px' }} placeholder="ชื่อสินค้า" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required />
+          <select style={inputStyle} value={form.category} onChange={e => setForm({ ...form, category: e.target.value })}>
+            {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+          <input style={{ ...inputStyle, width: '110px' }} type="number" step="0.1" placeholder="ตัวคูณราคา" value={form.price_multiplier} onChange={e => setForm({ ...form, price_multiplier: e.target.value })} />
+          <input style={{ ...inputStyle, width: '110px' }} type="number" placeholder="น้ำหนักสุ่ม" value={form.draw_weight} onChange={e => setForm({ ...form, draw_weight: e.target.value })} />
+          <input style={{ ...inputStyle, width: '90px' }} type="number" placeholder="คงเหลือ" value={form.stock} onChange={e => setForm({ ...form, stock: e.target.value })} />
+          <input style={{ ...inputStyle, width: '80px' }} placeholder="หน่วย" value={form.unit} onChange={e => setForm({ ...form, unit: e.target.value })} />
+          <button type="submit">{editingId ? 'บันทึกการแก้ไข' : 'เพิ่มสินค้า'}</button>
+          {editingId && <button type="button" style={secondaryButtonStyle} onClick={resetForm}>ยกเลิก</button>}
+        </form>
+      </div>
 
-      {loading ? <p>กำลังโหลด...</p> : (
+      {loading ? (
+        <p>กำลังโหลด...</p>
+      ) : (
         <table>
           <thead>
             <tr>
@@ -106,9 +149,9 @@ export default function ProductsPage() {
                 <td>{p.draw_weight}</td>
                 <td>{p.stock}</td>
                 <td>{p.unit}</td>
-                <td>
-                  <button onClick={() => startEdit(p)}>แก้ไข</button>
-                  <button onClick={() => handleDelete(p.id)}>ลบ</button>
+                <td style={{ whiteSpace: 'nowrap' }}>
+                  <button style={editButtonStyle} onClick={() => startEdit(p)}>แก้ไข</button>
+                  <button style={dangerButtonStyle} onClick={() => handleDelete(p.id)}>ลบ</button>
                 </td>
               </tr>
             ))}
